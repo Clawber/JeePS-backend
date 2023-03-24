@@ -36,11 +36,14 @@ app.get('/api/courses/:id', (req, res) => {
 // post input validation
 app.post('/api/courses', (req, res) => {
   // declaring schema, for input validation
-  const schema = {
-    name: Joi.string().min(3).required()
-  };
+  const result = validateCourse(req.body);    // object destructuring possible
+  
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
 
-  const result = Joi.validate(req.body, schema);
+
   // js truthy falsy bullshit, true when not null
   if (result.error) {
     // super dirty joi traversal
@@ -70,5 +73,81 @@ app.post('/api/courses', (req, res) => {
 });
 
 
+/*
+  modify a course
+    look for the course
+    if not exist, error 404
 
-app.listen(3000, () => console.log('listin'));
+    validate 
+    if invalid, 400 - Bad request
+
+    update course string
+    return updated course
+    
+*/
+app.put('/api/courses/:id', (req, res) => {
+  const course = courses.find(c => c.id === parseInt(req.params.id))
+
+  if (!course) {
+    res.status(404).send('The course with the given ID was not found.')
+    return;
+  }
+
+  const result = validateCourse(req.body);    // object destructuring possible
+  
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  course.name = req.body.name;
+  res.send(course);
+
+
+})
+
+function validateCourse(course) {
+  const schema = {
+    name: Joi.string().min(3).required()
+  };
+  return Joi.validate(course, schema)
+}
+
+
+
+app.delete('/api/courses/:id', (req, res) => {
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+
+  // not found, error 404
+  if (!course) {
+    res.status(404).send('The course with the given ID was not found')
+  }
+
+  // find index, delete
+  const index = courses.indexOf(course);
+  courses.splice(index, 1);
+
+  res.send(course);
+
+
+});
+
+
+
+app.listen(3003, () => console.log('listin'));
+
+
+
+/* TODO
+
+
+
+https://web.postman.co/workspace/My-Workspace~b7431ffc-0aee-4aae-88e9-ea819342ca72/request/create?requestId=bad2cad2-4f05-40aa-b744-12c229fe6d67
+Joi how to allow any parameter (in id)
+yt video in 47:59
+
+
+https://jeeps-api.onrender.com/
+
+
+*/
